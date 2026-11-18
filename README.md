@@ -9,24 +9,39 @@ Projektni zadatak iz predmeta **Prepoznavanje oblika i obrada slike** (Elektrote
 ## O projektu
 Cilj projekta je razvoj i evaluacija modela računarskog vida za automatsku detekciju i razlikovanje prisutnosti **vatre** (`fire`) i **dima** (`smoke`) na digitalnim slikama, uz smanjenje lažnih alarma u scenama s vizuelno sličnim pojavama (magla, oblaci, odsjaj).
 
-Koristi se skup podataka **D-Fire** (21.527 slika i 26.557 anotacija u YOLO formatu), a okosnicu eksperimentalnog dijela čine jednostepeni detektori iz porodice **YOLO** (Ultralytics).
+Koristi se skup podataka **D-Fire** (21.527 slika i 26.557 anotacija u YOLO formatu; klasa `0: smoke`, klasa `1: fire`), a okosnicu eksperimentalnog dijela čine jednostepeni detektori iz porodice **YOLO** (Ultralytics).
 
 ---
 
 ## Struktura repozitorija
 
 ```text
+izvjestaj/
+├── data/                            # [GIT-IGNORED] Izvorni D-Fire skup (train/ i test/)
+├── dfire_prepared/                  # [GIT-IGNORED] Automatski generisani train/val/test split + data.yaml
+├── poglavlja/                       # Zasebni .tex fajlovi po poglavljima izvještaja
+│   ├── lv2.tex                      # Pregled i analiza naučnoistraživačkih radova
+│   ├── lv3.tex                      # Analiza i profiliranje skupa podataka D-Fire
+│   └── lv4.tex                      # Definicija problema, ciljevi i plan rada
 ├── main.tex                         # Glavni LaTeX dokument projektne dokumentacije
 ├── preamble.tex                     # Zajednički paketi, stilovi i pravila formatiranja
-├── poglavlja/                       # Zasebni .tex fajlovi po poglavljima
-│   ├── lv2.tex                      # Definicija problema, ciljevi i plan rada
-│   ├── lv3.tex                      # Analiza i profiliranje skupa D-Fire
-│   └── lv4.tex                      # Pregled i analiza naučnoistraživačkih radova
-├── projekt.ipynb                    # Glavni Jupyter Notebook za obradu, trening i evaluaciju
+├── projekt.ipynb                    # Glavni Jupyter Notebook (obrada, trening, evaluacija, demo)
+├── .gitignore                       # Pravila za ignorisanje velikih podataka i pomoćnih LaTeX fajlova
 └── README.md                        # Upute za tim i pokretanje okruženja
 ```
 
-*(Napomena: Sam skup slika D-Fire se ne push-a na Git zbog veličine; preuzima se lokalno s [Kaggle distribucije](https://www.kaggle.com/datasets/sayedgamal99/smoke-fire-detection-yolo).)*
+---
+
+## Preuzimanje i priprema skupa podataka (Obavezno prije pokretanja koda)
+
+Zbog veličine skupa (~3 GB) ni izvorni folder `data/` ni obrađeni `dfire_prepared/` **ne nalaze se na GitHub-u**. Svaki član tima koji pokreće eksperimente lokalno ili na Google Colabu radi sljedeće:
+
+1. **Preuzimanje:** Skinuti D-Fire arhivu s [Kaggle distribucije](https://www.kaggle.com/datasets/sayedgamal99/smoke-fire-detection-yolo).
+2. **Raspakivanje u `data/`:** Raspakovati arhivu tako da unutar `izvjestaj/data/` budu direktno smješteni podfolderi `train/` i `test/` (svaki sa svojim `images/` i `labels/` podfolderima).
+3. **Generisanje `dfire_prepared/`:** U `projekt.ipynb` pokrenuti ćeliju za pripremu podataka (Korak 5). Skripta će automatski kreirati folder `dfire_prepared/`, izvršiti stratifikovanu podjelu izvornog trening skupa na `train` (80%) i `val` (20%) uz `SEED = 42`, te generisati `dfire_prepared/data.yaml`.
+4. **Reproducibilnost u timu:** Zahvaljujući fiksnom `SEED = 42`, svaki član tima pokretanjem te ćelije dobija **identičan** `train/val/test` raspored slika bez potrebe za slanjem velikih arhiva.
+
+*(Upozorenje: Nikada ne uklanjati `data/` i `dfire_prepared/` iz `.gitignore` fajla!)*
 
 ---
 
@@ -35,7 +50,7 @@ Koristi se skup podataka **D-Fire** (21.527 slika i 26.557 anotacija u YOLO form
 Dokumentacija je modularno podijeljena kako bi svih 6 članova tima moglo raditi paralelno bez konflikata:
 
 1. **Pravila pisanja poglavlja:**
-   * Svako novo poglavlje piše se u zasebnom `.tex` fajlu unutar foldera `poglavlja/`. Poglavlja će pratiti rad laboratorijskih vježbi (npr. `lv5.tex`).
+   * Svako novo poglavlje piše se u zasebnom `.tex` fajlu unutar foldera `poglavlja/` (npr. `lv5.tex` ili `05_implementacija.tex`) i uključuje u `main.tex` naredbom `\poglavlje{poglavlja/naziv_fajla}`.
    * Fajl **ne smije** sadržavati `\documentclass`, `\begin{document}` niti preambulu — počinje direktno sa `\section{Naziv poglavlja}`.
    * Potpisi (`\caption` i `\label`) za slike i tabele idu **ispod** same slike/tabele.
    * Nove reference dodaju se isključivo na kraj bloka `\begin{thebibliography}` u fajlu `main.tex`.
@@ -70,10 +85,12 @@ source .venv/bin/activate
 ### 2. Instalacija potrebnih biblioteka
 
 ```bash
-pip install ultralytics opencv-python-headless scikit-learn matplotlib seaborn pandas pyyaml jupyter
+pip install ultralytics opencv-python-headless scikit-learn matplotlib seaborn pandas pyyaml pillow jupyter
 ```
 
-### 3. Pokretanje i podjela rada u kodu
+*(Napomena: Ako trenirate lokalno na NVIDIA GPU-u, instalirajte PyTorch verziju s CUDA podrškom sa [pytorch.org](https://pytorch.org/get-started/locally/) prije ili nakon instalacije `ultralytics` paketa.)*
+
+### 3. Pokretanje Notebook-a
 * Otvorite `projekt.ipynb` u VS Code-u (uz instalirane *Python* i *Jupyter* ekstenzije) ili ga uploadujte na Google Colab.
-* U ćeliji za učitavanje podataka podesite putanju `DATASET_DIR` prema lokaciji vašeg preuzetog D-Fire foldera.
-* Sve eksperimente pokretati sa fiksnim `SEED = 42` kako bi rezultati bili reproducibilni kod svih članova tima.
+* Ćelije za provjeru podataka i generisanje `dfire_prepared/` su samostalne i mogu se pokrenuti nezavisno čim se raspakuje `data/` folder.
+* Sve eksperimente pokretati sa fiksnim `SEED = 42` radi uporedivosti rezultata.

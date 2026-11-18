@@ -62,3 +62,9 @@ Desktop.ini
 
 # Keep project-specific generated outputs untracked
 outputs/
+
+# Ne pushati sve slike skupa podataka
+data/
+dfire_prepared/
+*.jpg
+*.txt
