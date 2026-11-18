@@ -1,0 +1,78 @@
+%% =====================================================================
+%%  main.tex -- osnovni dokument projektne dokumentacije (tim Vatrogasci)
+%%  Predmet: Prepoznavanje oblika i obrada slike, ETF Sarajevo
+%%
+%%  Kompajliranje: pdfLaTeX, dva puta (sadržaj i reference).
+%%  Formatiranje se mijenja ISKLJUČIVO u preamble.tex.
+%%
+%%  Novo poglavlje: napraviti datoteku npr. 02_naziv.tex (počinje s
+%%  \section{...}) i dodati liniju \poglavlje{02_naziv} ispod postojećih.
+%%  Nove reference dodati na kraj popisa literature u ovom fajlu.
+%% =====================================================================
+\documentclass[11pt,a4paper]{article}
+\input{preamble}
+
+\begin{document}
+
+% =====================================================================
+%  NASLOVNA STRANA
+% =====================================================================
+\begin{titlepage}
+\centering
+{\large\bfseries UNIVERZITET U SARAJEVU\\[2pt] ELEKTROTEHNIČKI FAKULTET SARAJEVO\par}
+\smallskip
+Odsjek za računarstvo i informatiku\par
+\vspace{1.0cm}
+\textbf{Prepoznavanje oblika i obrada slike}\par
+\quad Akademska godina 2026/2027.\par
+\vspace{1.8cm}
+{\fontsize{26}{30}\selectfont\bfseries\color{etfblue} \NazivProjekta\par}
+\vspace{0.5cm}
+{\Large \PodnaslovProjekta\par}
+\vspace{0.6cm}
+{\large Projektna dokumentacija\par}
+\vspace{1.2cm}
+{\Large Tim: \textbf{\NazivTima}\par}
+\vspace{0.6cm}
+{\large
+\AutorA\\
+\AutorB\\
+\AutorC\\
+\AutorD\\
+\AutorE\\
+\AutorF\par}
+\vfill
+Sarajevo, \today\par
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+%  POGLAVLJA (redoslijed ovdje određuje redoslijed u dokumentu)
+% =====================================================================
+\poglavlje{poglavlja/lv2}
+\poglavlje{poglavlja/lv3}
+\poglavlje{poglavlja/lv4}
+% \poglavlje{poglavlja/02_...}
+
+% =====================================================================
+%  LITERATURA
+% =====================================================================
+\clearpage
+\addcontentsline{toc}{section}{Literatura}
+\begin{thebibliography}{99}
+\small
+\bibitem{dfire} GAIA -- Solutions on Demand, „D-Fire: an image dataset for fire and smoke detection“, službeni repozitorij i dokumentacija. \url{https://github.com/gaia-solutions-on-demand/DFireDataset} (pristupljeno: oktobar 2026).
+\bibitem{kaggle} Kaggle korisnik sayedgamal99, „Smoke-Fire-Detection-YOLO“, Kaggle, distribucija skupa D-Fire. \url{https://www.kaggle.com/datasets/sayedgamal99/smoke-fire-detection-yolo} (pristupljeno: oktobar 2026).
+\bibitem{jocher} G.\ Jocher, A.\ Chaurasia i J.\ Qiu, „Ultralytics YOLOv8“, GitHub repozitorij, 2023.
+\bibitem{ramos} L.\ T.\ Ramos, E.\ Casas, C.\ Romero, F.\ Rivas-Echeverría i E.\ Bendek, „A study of YOLO architectures for wildfire and smoke detection in ground and aerial imagery“, \emph{Results in Engineering}, sv.\ 26, čl.\ 104869, 2025.\ DOI: 10.1016/j.rineng.2025.104869.
+\bibitem{ligsf} C.\ Li, D.\ Wu, X.\ Zhang i P.\ Wu, „GSF-YOLOv8: A Novel Approach for Fire Detection Using Gather-Distribute Mechanism and SimAM Attention“, \emph{IEEE Access}, sv.\ 13, str.\ 66051--66064, 2025.\ DOI: 10.1109/ACCESS.2025.3560393.
+\bibitem{liyologx} C.\ Li, Y.\ Du, X.\ Zhang i P.\ Wu, „YOLOGX: an improved forest fire detection algorithm based on YOLOv8“, \emph{Frontiers in Environmental Science}, sv.\ 12, čl.\ 1486212, 2025.\ DOI: 10.3389/fenvs.2024.1486212.
+\bibitem{elhanashi} A.\ Elhanashi, S.\ Essahraui, P.\ Dini i S.\ Saponara, „Early Fire and Smoke Detection Using Deep Learning: A Comprehensive Review of Models, Datasets, and Challenges“, \emph{Applied Sciences}, sv.\ 15, br.\ 18, čl.\ 10255, 2025.\ DOI: 10.3390/app151810255.
+\bibitem{ahmad} A.\ A.\ Ahmad i O.\ S.\ Osman, „Image Processing Techniques-based fire detection“, \emph{Sulaimani Journal for Engineering Sciences}, sv.\ 8, br.\ 1, str.\ 23--34, 2021.\ DOI: 10.17656/sjes.10145.
+\bibitem{buriboev} A.\ S.\ Buriboev, A.\ Abduvaitov i H.\ S.\ Jeon, „Integrating Color and Contour Analysis with Deep Learning for Robust Fire and Smoke Detection“, \emph{Sensors}, sv.\ 25, br.\ 7, čl.\ 2044, 2025.\ DOI: 10.3390/s25072044.
+\bibitem{venancio} P.\ V.\ A.\ B.\ de Venâncio, A.\ C.\ Lisboa i A.\ V.\ Barbosa, „An automatic fire detection system based on deep convolutional neural networks for low-power, resource-constrained devices“, \emph{Neural Computing and Applications}, sv.\ 34, str.\ 15349--15368, 2022.\ DOI: 10.1007/s00521-022-07467-z.
+\end{thebibliography}
+
+\end{document}

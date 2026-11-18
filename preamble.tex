@@ -1,0 +1,108 @@
+%% =====================================================================
+%%  preamble.tex -- zajednička pravila formatiranja za cijelu dokumentaciju
+%%  Učitava se iz main.tex i iz AI izvještaja (\input{preamble}),
+%%  pa su oba dokumenta uvijek jednako oblikovana.
+%%
+%%  PRAVILA ZA SVE AUTORE:
+%%   * Svako poglavlje je zasebna .tex datoteka (bez \documentclass i
+%%     \begin{document}) koja počinje s \section{...}.
+%%   * Slike i tabele se numerišu po poglavljima (Slika 2.1, Tabela 2.3).
+%%   * Potpis (\caption) ide ISPOD slike i ISPOD tabele; uvijek dodati
+%%     \label (slike: fig:..., tabele: tab:...) i pozivati se s \ref{...}.
+%%   * Slike i tabele ubacivati u okruženju [H] (paket float).
+%%   * Literatura: \cite{kljuc}; nove stavke dodati na kraju main.tex.
+%%   * Decimalni zarez u tekstu i tabelama (0,85), nazivi metrika ostaju
+%%     kao u literaturi (mAP@0.5).
+%%   * Crvene oznake \dopuniti{...} i \provjeriti{...} su podsjetnici;
+%%     prije predaje pretražiti "dopuniti" i "provjeriti".
+%% =====================================================================
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+% bosnian zahtijeva noviju TeX Live distribuciju; ako nije dostupan, koristi se croatian
+\IfFileExists{bosnian.ldf}{%
+  \usepackage[bosnian]{babel}%
+  \addto\captionsbosnian{\renewcommand{\tablename}{Tabela}\renewcommand{\refname}{Literatura}\renewcommand{\contentsname}{Sadržaj}}%
+}{%
+  \usepackage[croatian]{babel}%
+  \addto\captionscroatian{\renewcommand{\tablename}{Tabela}\renewcommand{\refname}{Literatura}\renewcommand{\contentsname}{Sadržaj}}%
+}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+
+% ---------- numeracija slika, tabela i jednačina po poglavljima ----------
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
+\counterwithin{equation}{section}
+
+% ---------- boje i oznake ----------
+\definecolor{etfblue}{RGB}{0,51,102}
+\newcommand{\dopuniti}[1]{\textcolor{red}{\textbf{[#1]}}}
+\newcommand{\provjeriti}[1]{\par\smallskip{\small\textcolor{red}{\textit{Napomena (ukloniti nakon provjere): #1}}}\par}
+
+% ---------- podaci o projektu i timu (mijenjati samo ovdje) ----------
+\newcommand{\NazivTima}{Vatrogasci}
+\newcommand{\NazivProjekta}{Detekcija vatre i dima na slikama}
+\newcommand{\PodnaslovProjekta}{Razlikovanje prisutnosti dima i vatre na skupu podataka D-Fire}
+\newcommand{\AutorA}{Danijal Alibegović}
+\newcommand{\AutorB}{Aldin Velić}
+\newcommand{\AutorC}{Zijad Doglod}
+\newcommand{\AutorD}{Dino Burić}
+\newcommand{\AutorE}{Haris Macić}
+\newcommand{\AutorF}{Adnan Šemić}
+
+% ---------- osnovno oblikovanje ----------
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt plus 1pt minus 1pt}
+\renewcommand{\arraystretch}{1.2}
+\emergencystretch=1.5em
+\captionsetup{font=small,labelfont=bf,labelsep=period,skip=6pt}
+\setlist{topsep=3pt,itemsep=2pt,parsep=0pt,leftmargin=*}
+\setcounter{tocdepth}{2}
+
+\titleformat{\section}{\Large\bfseries\color{etfblue}}{\thesection.}{0.6em}{}[\color{etfblue}\titlerule]
+\titleformat{name=\section,numberless}{\Large\bfseries\color{etfblue}}{}{0pt}{}[\color{etfblue}\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{etfblue}}{\thesubsection}{0.6em}{}
+\titleformat{name=\subsection,numberless}{\large\bfseries\color{etfblue}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{16pt}{8pt}
+\titlespacing*{\subsection}{0pt}{12pt}{4pt}
+\titlespacing*{\subsubsection}{0pt}{8pt}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small ETF Sarajevo $\bullet$ POOS $\bullet$ Tim \NazivTima}
+\fancyhead[R]{\small Projektni zadatak}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ---------- novo poglavlje uvijek počinje na novoj stranici ----------
+\newcommand{\poglavlje}[1]{\clearpage\input{#1}}
+\newcommand{\paperbox}[5]{%
+  \begin{tcolorbox}[colback=black!4,colframe=black!45,boxrule=0.4pt,arc=2pt,
+      left=6pt,right=6pt,top=4pt,bottom=4pt]
+  \small
+  \begin{tabularx}{\linewidth}{@{}>{\bfseries}p{3.4cm}X@{}}
+    Autor izvještaja: & #1 \\
+    Analizirani rad: & #2 \\
+    Izvor: & #3 \\
+    Skup podataka u radu: & #4 \\
+    Vrsta rada: & #5 \\
+  \end{tabularx}
+  \end{tcolorbox}\par\smallskip}

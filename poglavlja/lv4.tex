@@ -1,0 +1,135 @@
+% =====================================================================
+%  Poglavlje 1 -- Definicija problema, ciljevi i plan rada
+%  (bez \documentclass i \begin{document}; učitava se iz main.tex)
+% =====================================================================
+\section{Definicija problema, ciljevi i plan rada}
+\label{sec:problem}
+
+\subsection{Opis problema}
+Tema projekta je razlikovanje prisutnosti dima i vatre na slikama. Ulaz je jedna RGB slika (fotografija ili kadar iz nadzorne kamere), a izlaz je odgovor na pitanje koje su od dvije pojave, vatra i dim, na slici prisutne, uz lokaciju svake detektovane pojave. Zadatak je praktično značajan jer tradicionalni detektori zasnovani na fizičkim senzorima reaguju tek kada toplota ili produkti sagorijevanja stignu do senzora, dok kamere omogućavaju rano uočavanje požara na većim i otvorenim prostorima.
+
+Problem je težak iz nekoliko razloga:
+\begin{itemize}
+  \item rani plamen zauzima samo nekoliko piksela, pa spada u male objekte;
+  \item dim je poluproziran, nema jasne konture, a boja mu varira;
+  \item pojave poput magle, niskih oblaka, prašine, zalaska sunca ili crvenih svjetala vizuelno liče na vatru i dim i izazivaju lažne alarme;
+  \item skup podataka je neuravnotežen po kategorijama slika (Tabela~\ref{tab:dfire}).
+\end{itemize}
+
+\paragraph{Formalna definicija.} Problem formulišemo kao detekciju objekata. Za sliku $I$ model vraća skup detekcija $\{(b_i, c_i, s_i)\}$, gdje je $b_i$ granični okvir, $c_i \in \{\text{fire}, \text{smoke}\}$ klasa, a $s_i \in [0,1]$ pouzdanost. Prisutnost klase $c$ na nivou slike određujemo pragom pouzdanosti $\tau$:
+\begin{equation}
+  y_c(I) = \mathbb{1}\bigl[\exists\, i:\ c_i = c \ \wedge\ s_i \ge \tau\bigr].
+  \label{eq:prisutnost}
+\end{equation}
+Par $(y_{\text{fire}}, y_{\text{smoke}})$ daje jednu od četiri kategorije slike: samo vatra, samo dim, vatra i dim ili bez ijedne pojave. Na taj način isti model možemo vrednovati i kao detektor (mAP, lokalizacija) i kao klasifikator prisutnosti (preciznost i odziv po klasama, matrica konfuzije).
+
+\subsection{Skup podataka}
+Koristimo skup podataka D-Fire \cite{dfire} u Kaggle distribuciji \cite{kaggle}. Skup ima 21.527 slika i pravougaone anotacije u YOLO formatu za dvije klase, \emph{fire} i \emph{smoke}: ukupno 26.557 graničnih okvira, od čega 14.692 okvira vatre i 11.865 okvira dima. Raspodjela slika po kategorijama data je u Tabeli~\ref{tab:dfire}.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Kategorija slike} & \textbf{Broj slika} & \textbf{Udio (\%)}\\
+\midrule
+Samo vatra & 1.164 & 5,4\\
+Samo dim & 5.867 & 27,3\\
+Vatra i dim & 4.658 & 21,6\\
+Bez vatre i dima & 9.838 & 45,7\\
+\midrule
+\textbf{Ukupno} & \textbf{21.527} & \textbf{100,0}\\
+\bottomrule
+\end{tabular}
+\caption{Raspodjela slika skupa D-Fire po kategorijama \cite{dfire}.}
+\label{tab:dfire}
+\end{table}
+
+Skoro polovina slika ne sadrži nijednu od pojava, a dio njih prikazuje vizuelno slične pojave (oblake, maglu, prašinu), što skup čini pogodnim za ispitivanje lažnih alarma. S druge strane, slike samo s vatrom čine tek 5,4\% skupa, pa neuravnoteženost treba uzeti u obzir pri podjeli podataka i vrednovanju. Raspored datoteka (train/validation/test) i indeksi klasa u preuzetoj kopiji moraju se provjeriti prije treniranja.
+
+\subsection{Odabrani pristup}
+Pregled literature o detekciji vatre i dima pokazuje da u novijim radovima dominiraju jednostepeni detektori iz porodice YOLO, koji nude dobar odnos tačnosti i brzine obrade. Skup D-Fire je već u YOLO formatu, a radovi koji ga koriste i modifikuju YOLOv8 postižu mAP@0.5 od oko 0,80 \cite{ligsf,liyologx}. Poređenje više generacija YOLO-a (YOLOv8--YOLO11) pokazuje i da veći modeli nisu nužno bolji: srednje varijante često ostvaruju gotovo jednak kvalitet uz znatno manju latenciju \cite{ramos}.
+
+Zato ćemo kao osnovu koristiti detektor YOLOv8 iz biblioteke Ultralytics \cite{jocher}, u maloj varijanti koja se može trenirati na dostupnom hardveru. Taj model je referentni (\emph{baseline}) s kojim ćemo porediti sve naknadne izmjene. Poređenje ćemo proširiti jednom većom varijantom ili novijom arhitekturom te, u skladu s preostalim vremenom, jednim do dva poboljšanja motivisana literaturom (podešavanje augmentacije i praga pouzdanosti, lagani modul pažnje, izmijenjena funkcija gubitka).
+
+Tradicionalne metode obrade slike zasnovane na boji i konturama osjetljive su na osvjetljenje i objekte slične boje, pa ih ne koristimo kao glavni pravac. Mogu poslužiti kao pomoć pri analizi grešaka ili kao opcionalan dodatni eksperiment predobrade.
+
+\subsection{Koraci izrade}
+Rad na projektu prema planu podijeljen je u šest koraka (Slika~\ref{fig:koraci}) na osnovu definisanog okvira projekta. Koraci se po potrebi iteriraju tokom dorade. Kratak opis svakog koraka i planirani način izrade dati su u Tabeli~\ref{tab:koraci}. Plan je okviran i može se naknadno prilagoditi.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=0.5cm,
+  st/.style={draw=black!70, rounded corners=2pt, fill=blue!6, text width=3.5cm, inner sep=4pt, align=center, minimum height=1.35cm, font=\footnotesize},
+  arr/.style={-{Stealth[length=2mm]}, thick, black!70}]
+  
+  \node[st] (n1) {\textbf{1.} Početak implementacije};
+  \node[st, right=of n1] (n2) {\textbf{2.} Opis izabranih modela i pristupa};
+  \node[st, right=of n2] (n3) {\textbf{3.} Implementacija i treniranje};
+  
+  \node[st, below=1.0cm of n3] (n4) {\textbf{4.} Evaluacija i fine-tuning};
+  \node[st, left=of n4] (n5) {\textbf{5.} Korisnički interfejs i zaključak};
+  \node[st, left=of n5] (n6) {\textbf{6.} Dorada po potrebi};
+  
+  \draw[arr] (n1) -- (n2);
+  \draw[arr] (n2) -- (n3);
+  \draw[arr] (n3) -- (n4);
+  \draw[arr] (n4) -- (n5);
+  \draw[arr] (n5) -- (n6);
+\end{tikzpicture}
+\caption{Koraci izrade projekta.}
+\label{fig:koraci}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}c>{\raggedright\arraybackslash}p{4cm}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Korak} & \textbf{Naziv koraka} & \textbf{Planirani način izrade i opis}\\
+\midrule
+1 & Početak implementacije (učitavanje skupa podataka, preprocesiranje) & Preuzimanje D-Fire skupa, provjera klasa i anotacija. Stratifikovana podjela (npr. 70/15/15, fiksni seed). Skaliranje na 640$\times$640 i ugrađene augmentacije biblioteke Ultralytics (okretanje, HSV promjene, skaliranje, mozaik). \\
+2 & Opis izabranih modela/tehnika/metoda & Teorijski pregled i obrazloženje izabranih YOLO arhitektura (YOLOv8n/s, YOLO11s) i potencijalnih modula pažnje. \\
+3 & Implementacija izabranih modela/tehnika/metoda i treniranje & Korištenje unaprijed treniranih težina; fine-tuning na D-Fire skupu, oko 100 epoha uz rano zaustavljanje na GPU lokalno ili Colab/Kaggle platformi. \\
+4 & Evaluacija pristupa i \textit{fine-tuning} parametara & Računanje mAP, preciznosti, odziva i matrice konfuzije. Analiza grešaka (lažno pozitivne detekcije, propuštene detekcije) te podešavanje hiperparametara, praga pouzdanosti i augmentacija radi poboljšanja. \\
+5 & Kreiranje korisničkog interfejsa i pisanje zaključka & Razvoj interfejsa za demonstraciju detekcije vatre i dima. Prikupljanje tabela i grafika, diskusija prednosti i ograničenja pristupa, te zapis konfiguracija radi reproducibilnosti. \\
+6 & Dorada (ukoliko ima potrebe) & Ponovno ponavljanje određenih koraka u ovisnosti od uočenih nedostataka tokom evaluacije ili kreiranja interfejsa. \\
+\bottomrule
+\end{tabularx}
+\caption{Revidirani koraci izrade projekta s opisom implementacije.}
+\label{tab:koraci}
+\end{table}
+
+\subsection{Ciljevi projekta}
+Realizacijom rješenja želimo postići sljedeće konkretne ishode:
+\begin{enumerate}
+  \item \textbf{Pripremljen skup podataka:} provjerena struktura i klase skupa D-Fire, dokumentovana statistika po kategorijama i fiksna, reproducibilna podjela na skupove za treniranje, validaciju i testiranje.
+  \item \textbf{Istreniran referentni detektor:} YOLOv8 (mala varijanta) istreniran na skupu D-Fire s rezultatima u rangu objavljenih za taj model i skup. Orijentir je mAP@0.5 od oko 0,79 za osnovni YOLOv8 \cite{liyologx}; tačne ciljne vrijednosti odredit ćemo nakon prvog treniranja, jer se podjele podataka u radovima razlikuju od naše.
+  \item \textbf{Cjelovita evaluacija:} detekcijske metrike (mAP@0.5, mAP@0.5:0.95, preciznost i odziv zasebno za vatru i dim) te metrike prisutnosti na nivou slike (matrica konfuzije za četiri kategorije i stopa lažnih alarma na slikama bez pojava).
+  \item \textbf{Poređenje konfiguracija:} baseline uporeden barem s dvije dodatne konfiguracije pod jednakim uslovima, uz kvantifikovanu razliku u rezultatima.
+  \item \textbf{Analiza grešaka:} opisani tipični uzroci grešaka (sitan plamen, dim naspram magle i oblaka, noćne scene) uz vizuelne primjere.
+  \item \textbf{Reproducibilnost:} dokumentovani verzije biblioteka, seed i konfiguracije treniranja; po mogućnosti jednostavna skripta za primjenu modela na novim slikama.
+\end{enumerate}
+
+\subsection{Ograničenja problema}
+Faktori koji mogu uticati na tok i ishod izrade projekta navedeni su u Tabeli~\ref{tab:ogranicenja}, zajedno s uticajem i planiranim načinom ublažavanja.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.1cm}>{\raggedright\arraybackslash}p{4.6cm}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Vrsta} & \textbf{Ograničenje} & \textbf{Uticaj i ublažavanje}\\
+\midrule
+Tehničko & Ograničeni računarski resursi: besplatne GPU platforme s vremenskim limitima sesija, različit hardver članova tima. & Duže treniranje i manji broj eksperimenata; koristimo male modele i ulaz 640$\times$640, redovno snimamo međurezultate (\emph{checkpoint}).\\
+Tehničko & Kvalitet i raspodjela podataka: neuravnoteženost kategorija, mogući šum u anotacijama, mali objekti, moguće slične slike u različitim podskupovima. & Opasnost od optimističnih rezultata i slabijeg odziva za vatru; provjera duplikata, stratifikovana podjela, analiza po klasama, augmentacija.\\
+Tehničko & Slučajnost treniranja i razlike u verzijama biblioteka. & Rezultati se mogu razlikovati između pokretanja; fiksni seed, zapis verzija, ponavljanje ključnih eksperimenata ako vrijeme dopusti.\\
+Vremensko & Rokovi tokom semestra i druge obaveze studenata. & Ograničen broj iteracija; prioritet imaju baseline i evaluacija, a poboljšanja se rade u preostalom vremenu.\\
+Organizaciono & Tim od šest članova: usklađivanje rada, koda i rezultata. & Opasnost od dupliranog posla i nekonzistentnih rezultata; zajednički repozitorij (Git), dogovorena podjela zadataka i zajednička LaTeX dokumentacija.\\
+Funkcionalno & Model obrađuje pojedinačne slike, bez vremenske komponente. & Statičan dim može izazvati lažne alarme, a praćenje kroz video nije obuhvaćeno; rezultate ne predstavljamo kao spremne za nadzor u realnom vremenu.\\
+Funkcionalno & Rezultati važe za skup D-Fire i ne moraju važiti za druge scenarije (noć, magla, druge kamere, uslovi u Bosni i Hercegovini). & Ne tvrdimo generalizaciju na druge skupove; to navodimo kao ograničenje u zaključcima.\\
+\bottomrule
+\end{tabularx}
+\caption{Ograničenja problema i način njihovog ublažavanja.}
+\label{tab:ogranicenja}
+\end{table}
